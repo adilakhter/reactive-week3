@@ -153,7 +153,7 @@ package object nodescala {
   object Subscription {
     /** Given two subscriptions `s1` and `s2` returns a new composite subscription
      *  such that when the new composite subscription cancels both `s1` and `s2`
-     *  when `unsubscribe` is called.
+     *  when `unsubscribe` is called..
      */
     def apply(s1: Subscription, s2: Subscription) = new Subscription {
       def unsubscribe() {
