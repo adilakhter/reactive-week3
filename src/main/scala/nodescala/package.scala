@@ -31,7 +31,7 @@ package object nodescala {
      */
     def all[T](fs: List[Future[T]]): Future[List[T]] = {
       val result : Future[List[T]] =
-        fs.foldLeft(Promise[List[T]]().success(Nil).future){(acc, f) =>
+        fs.foldRight(Promise[List[T]]().success(Nil).future){(f,acc) =>
           for{
             x <- f
             xs <- acc
@@ -60,7 +60,7 @@ package object nodescala {
 
     /** Returns a future with a unit value that is completed after time `t`.
      */
-    def delay(t: Duration): Future[Unit] = {
+    def delay(t: Duration): Future[Unit] = async{
       val p: Promise[Unit] = Promise[Unit]()
 
       blocking{
@@ -101,7 +101,7 @@ package object nodescala {
       * depending on the current state of the `Future`.
       */
     def now: T =
-      Try(Await.result(f, 0 seconds)) match {
+      Try(Await.result(f, 0 nanos)) match {
         case Success(result) => result
         case Failure(ex) => throw new NoSuchElementException()
       }
@@ -135,7 +135,11 @@ package object nodescala {
     def continue[S](cont: Try[T] => S): Future[S] = {
       val p = Promise[S]()
       f.onComplete {
-        case Success(r) => p.success(cont(Try(r)))
+        case Success(r) =>
+          Try(cont(Try(r))) match {
+            case Success(result) => p.success(result)
+            case Failure(err) => p.failure(err)
+          }
         case Failure(e) => p.failure(e)
       }
 
